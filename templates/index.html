@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>巡航小车控制面板</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --accent-color: #f39c12;
+            --danger-color: #e74c3c;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: var(--light-color);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            color: var(--light-color);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+            display: inline-block;
+        }
+        
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: var(--primary-color);
+            border-radius: 3px;
+        }
+        
+        .status-bar {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+        }
+        
+        .status-indicator i {
+            margin-right: 5px;
+            color: var(--secondary-color);
+        }
+        
+        .video-container {
+            position: relative;
+            margin: 0 auto 25px;
+            width: 100%;
+            max-width: 640px;
+            height: 480px;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: crosshair;
+            box-shadow: var(--shadow);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .video-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            border-radius: 10px;
+            background: radial-gradient(circle at center, transparent 80%, rgba(52, 152, 219, 0.2));
+        }
+        
+        #videoFeed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        
+        .click-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--accent-color);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            70% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.7;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .coordinates {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .coordinates.active {
+            border-left-color: var(--secondary-color);
+            background: rgba(46, 204, 113, 0.2);
+        }
+        
+        .control-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            min-width: 120px;
+        }
+        
+        button i {
+            margin-right: 8px;
+        }
+        
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        #resetBtn {
+            background: var(--danger-color);
+        }
+        
+        #resetBtn:hover {
+            background: #c0392b;
+        }
+        
+        .auto-mode-btn {
+            background: var(--secondary-color);
+        }
+        
+        .auto-mode-btn:hover {
+            background: #27ae60;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .video-container {
+                height: 360px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+         .save-notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(46, 204, 113, 0.9);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        transition: opacity 0.5s;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+    }
+
+    .save-notification i {
+        margin-right: 8px;
+        font-size: 16px;
+    }
+
+    .save-notification.fade-out {
+        opacity: 0;
+    }
+    </style>
+
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-robot"></i> 巡航小车控制面板</h1>
+        </header>
+        
+        <div class="status-bar">
+            <div class="status-indicator">
+                <i class="fas fa-circle"></i> 系统状态: 正常运行中
+            </div>
+            <div class="connection-status">
+                <i class="fas fa-wifi"></i> 连接状态: 已连接
+            </div>
+        </div>
+        
+        <div class="video-container" id="videoContainer">
+            <img id="videoFeed" src="http://localhost:5000/video_feed" alt="视频流">
+            <div class="video-overlay"></div>
+            <div id="clickMarker" class="click-marker" style="display: none;"></div>
+        </div>
+        
+        <div class="coordinates" id="coordinatesDisplay">
+            <i class="fas fa-crosshairs"></i> 点击视频画面上的任意位置来控制小车移动
+        </div>
+        
+        <div class="control-panel">
+            <div class="panel-item">
+                <div class="controls">
+                    <button id="resetBtn"><i class="fas fa-undo"></i> 重置坐标</button>
+                    <button class="auto-mode-btn"><i class="fas fa-magic"></i> 自动模式</button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>巡航小车控制系统 &copy; 2023</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const videoContainer = document.getElementById('videoContainer');
+            const coordinatesDisplay = document.getElementById('coordinatesDisplay');
+            const clickMarker = document.getElementById('clickMarker');
+            const resetBtn = document.getElementById('resetBtn');
+            const autoModeBtn = document.querySelector('.auto-mode-btn');
+            
+            // 处理视频容器上的点击事件
+            // 在videoContainer的点击事件处理函数中添加保存帧的请求
+            videoContainer.addEventListener('click', function(event) {
+                // 获取相对于视频容器的坐标
+                const rect = videoContainer.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                
+                // 显示点击标记
+                clickMarker.style.left = x + 'px';
+                clickMarker.style.top = y + 'px';
+                clickMarker.style.display = 'block';
+                
+                // 更新坐标显示
+                coordinatesDisplay.innerHTML = `<i class="fas fa-map-marker-alt"></i> 点击坐标: x=${Math.round(x)}, y=${Math.round(y)}`;
+                coordinatesDisplay.classList.add('active');
+                
+                // 发送坐标到后端
+                sendCoordinates(x, y);
+                
+                // 保存当前帧
+                saveCurrentFrame();
+            });
+            
+            // 添加保存当前帧的函数
+            function saveCurrentFrame() {
+                fetch('http://localhost:5000/save_frame', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({}),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // 显示保存成功的消息
+                        const savedMessage = document.createElement('div');
+                        savedMessage.className = 'save-notification';
+                        savedMessage.innerHTML = `<i class="fas fa-check-circle"></i> 图像已保存: ${data.filename}`;
+                        document.body.appendChild(savedMessage);
+                        
+                        // 3秒后移除通知
+                        setTimeout(() => {
+                            savedMessage.classList.add('fade-out');
+                            setTimeout(() => {
+                                document.body.removeChild(savedMessage);
+                            }, 500);
+                        }, 3000);
+                    } else {
+                        console.error('保存图像失败:', data.message);
+                    }
+                })
+                .catch((error) => {
+                    console.error('保存图像请求错误:', error);
+                });
+            }
+            
+            // 重置按钮点击事件
+            resetBtn.addEventListener('click', function() {
+                // 添加按钮点击效果
+                this.classList.add('clicked');
+                setTimeout(() => this.classList.remove('clicked'), 200);
+                
+                // 隐藏点击标记
+                clickMarker.style.display = 'none';
+                
+                // 重置坐标显示
+                coordinatesDisplay.innerHTML = '<i class="fas fa-crosshairs"></i> 点击视频画面上的任意位置来控制小车移动';
+                coordinatesDisplay.classList.remove('active');
+                
+                // 发送重置坐标到后端
+                sendCoordinates(0, 0);
+            });
+            
+            // 自动模式按钮点击事件
+            autoModeBtn.addEventListener('click', function() {
+                // 添加按钮点击效果
+                this.classList.add('clicked');
+                setTimeout(() => this.classList.remove('clicked'), 200);
+                
+                // 这里可以添加自动模式的逻辑
+                alert('自动模式已启动！');
+            });
+            
+            // 发送坐标到后端的函数
+            function sendCoordinates(x, y) {
+                fetch('http://localhost:5000/send_coordinates', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ x, y }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('坐标发送成功:', data);
+                })
+                .catch((error) => {
+                    console.error('坐标发送错误:', error);
+                    coordinatesDisplay.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 坐标发送失败，请检查连接';
+                    coordinatesDisplay.classList.remove('active');
+                });
+            }
+            
+            // 处理视频流加载错误
+            const videoFeed = document.getElementById('videoFeed');
+            videoFeed.onerror = function() {
+                coordinatesDisplay.innerHTML = '<i class="fas fa-exclamation-circle"></i> 视频流加载失败，请检查后端服务是否正常运行';
+                coordinatesDisplay.style.color = 'var(--danger-color)';
+                document.querySelector('.status-indicator i').style.color = 'var(--danger-color)';
+                document.querySelector('.status-indicator').innerHTML = '<i class="fas fa-circle"></i> 系统状态: 连接错误';
+                document.querySelector('.connection-status').innerHTML = '<i class="fas fa-wifi"></i> 连接状态: 已断开';
+            };
+            
+            // 添加一些动画效果
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.addEventListener('mousedown', function() {
+                    this.style.transform = 'scale(0.95) translateY(2px)';
+                });
+                button.addEventListener('mouseup', function() {
+                    this.style.transform = '';
+                });
+                button.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
